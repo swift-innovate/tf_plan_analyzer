@@ -1,0 +1,73 @@
+# .github/workflows/tf-plan-analyze.yml
+# -----------------------------------------------
+# Runs on PRs that modify Terraform files.
+# 1. Generates a Terraform plan
+# 2. Feeds it through the LLM analyzer
+# 3. Posts the risk assessment as a PR comment
+# -----------------------------------------------
+
+name: "Terraform Plan Analysis"
+
+on:
+  pull_request:
+    paths:
+      - "**/*.tf"
+      - "**/*.tfvars"
+
+permissions:
+  contents: read
+  pull-requests: write   # Needed for PR comments
+
+jobs:
+  analyze:
+    name: "🤖 TF Plan Analyzer"
+    runs-on: ubuntu-latest
+
+    # ── Adjust these for your environment ──
+    env:
+      TF_WORKING_DIR: "."                          # Path to your TF root module
+      TF_ANALYZER_MODEL: "claude-sonnet-4-5-20250929"   # or claude-haiku-4-5-20241022 for cheaper runs
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false   # We need raw JSON output
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform init -input=false
+        # Add backend config / provider credentials as needed:
+        # env:
+        #   ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+        #   ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+        #   ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+        #   ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+
+      - name: Terraform Plan
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: |
+          terraform plan -input=false -out=tfplan
+          terraform show -json tfplan > plan.json
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Analyzer
+        run: pip install anthropic requests
+
+      - name: Run TF Plan Analyzer
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          python tf_plan_analyzer.py \
+            ${{ env.TF_WORKING_DIR }}/plan.json \
+            --github-comment \
+            --pr ${{ env.PR_NUMBER }}

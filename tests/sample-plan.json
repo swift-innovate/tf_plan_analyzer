@@ -1,0 +1,40 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.7.5",
+  "resource_changes": [
+    {
+      "address": "proxmox_virtual_environment_vm.openclaw_main",
+      "type": "proxmox_virtual_environment_vm",
+      "name": "openclaw_main",
+      "provider_name": "registry.terraform.io/bpg/proxmox",
+      "change": {
+        "actions": ["update"],
+        "before": {
+          "id": "103",
+          "name": "OpenClaw-Main",
+          "started": true,
+          "tags": ["ai", "desktop", "openclaw", "terraform"],
+          "ipv4_addresses": [],
+          "ipv6_addresses": [],
+          "network_interface_names": [],
+          "cpu": { "cores": 4, "sockets": 1 },
+          "memory": { "dedicated": 8192 },
+          "disk": [{ "size": 64, "interface": "scsi0" }]
+        },
+        "after": {
+          "id": "103",
+          "name": "OpenClaw-Main",
+          "started": false,
+          "tags": ["ai", "desktop", "openclaw", "terraform"],
+          "ipv4_addresses": null,
+          "ipv6_addresses": null,
+          "network_interface_names": null,
+          "cpu": { "cores": 4, "sockets": 1 },
+          "memory": { "dedicated": 8192 },
+          "disk": [{ "size": 64, "interface": "scsi0" }]
+        }
+      }
+    }
+  ],
+  "output_changes": {}
+}
